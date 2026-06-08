@@ -16,6 +16,11 @@ typedef struct{             //struct da fila
 	int total;
 } Fila;
 
+typedef struct{
+	Peca itens[MAX];
+	int topo;
+} Pilha;
+
 void inicializarFila(Fila *f){    //função para inicializar a fila zerada
 	f -> inicio = 0;
 	f -> fim = 0;
@@ -26,6 +31,27 @@ int filaCheia(Fila *f){      //faz a verificação apra ver se a fila esta com t
 }
 int filaVazia(Fila *f){       //verifica se a lista esta vazia 
 	return f-> total == 0;
+}
+
+void inicializarPilha(Pilha *p){    //função de inicializaçao da pilha 
+	p->topo = -1;                  //topo da pilha iniciando em -1 quer dizer que a pilha esta vazia
+}
+
+int pilhaVazia(Pilha *p){        //verifica se a pilha esta vazia
+    return p->topo == -1;
+}
+
+int pilhaCheia(Pilha *p){       //verifica se a pilha esta cheia
+    return p->topo == MAX - 1;
+}
+
+void push(Pilha *p, Peca item){
+	if (pilhaCheia(p)){
+		printf("Pilha Cheia! Nao e possivel inserir.\n");
+		return;
+	}
+	p->topo++;
+	p->itens[p->topo] = item;
 }
 
 void inserir(Fila *f, Peca p){       //função para inserir ou ENQUEUE
@@ -55,22 +81,52 @@ void mostrarFila(Fila *f){
 	}
 	printf("\n");
 }
+void mostrarPilha(Pilha *p){
+	printf("Pilha (Topo -> Base): \n");
+	if (pilhaVazia(p)){
+    printf("Pilha vazia.\n");
+    return;
+}
+	for (int i= p->topo; i>=0; i--){
+	printf("[%c %d]\n", p->itens[i].nome, p->itens[i].id);
+	}
+	printf("\n");
+}
 
-void remover(Fila *f){               //função de remoção da peça no caso a peça do inicio (fila FIFO - first in first out)
+Peca pop(Pilha *p){
+	Peca removida;
+	if (pilhaVazia(p)){
+		printf("Pilha vazia! Nao e possivel remover.\n");
+		removida.nome = ' ';
+		removida.id = -1;
+		return removida;
+	}
+	removida = p ->itens[p->topo];
+	p->topo--;
+	return removida;
+}
+
+Peca remover(Fila *f){               //função de remoção da peça no caso a peça do inicio (fila FIFO - first in first out)
+	Peca removida;                  //criando uma variavel para armazenar a peça que sera removida (caixinha temporaria)
     if(filaVazia(f))
     {
         printf("\nFila vazia!\n");
-        return;
+        removida.nome= ' ';
+        removida.id= -1;
+        return removida;
     }
-	Peca removida = f -> itens[f->inicio];
-	printf("Peca jogada: %c %d\n", removida.nome, removida.id);
+	removida = f -> itens[f->inicio];
+	printf("Peca escolhida: %c %d\n", removida.nome, removida.id);
 	f->inicio = (f->inicio + 1) % MAX;
 	f->total--;
+	return removida;
 }
 
 int main(){
 	Fila f;
+	Pilha p;
 	inicializarFila(&f);      //inicializa a fila
+	inicializarPilha(&p);    //inicializa a pilha
 	srand(time(NULL));      // para não sair sempre com a mesma sequencia 
 	for (int i = 0 ; i < MAX ; i++){     //esse laço de repetição vai ate MAX ou seja 5 gerando 5 peças
 		inserir(&f, gerarPeca());     //cria uma peça aleatoria e insere na fila 
@@ -80,21 +136,51 @@ int main(){
 	mostrarFila(&f);
 	int opcao;
 	do{
-		printf("\n======= Menu =======\n");
+		printf("\n========= Menu =========\n");
 		printf("1- Jogar peca\n");
-		printf("2- Inserir nova peca\n");
+		printf("2- Reservar peca\n");
+		printf("3- Usar peca reservada\n");
 		printf("0- Sair\n");
+		printf("========================\n");
 		printf("Digite a opcao desejada: ");
 		scanf("%d", &opcao);
 		switch(opcao){
 		case 1: 
 			remover(&f);
-			mostrarFila(&f);
-			break;
-		case 2:
 			inserir(&f, gerarPeca());
 			mostrarFila(&f);
+			mostrarPilha(&p);
 			break;
+		case 2:
+		{
+    		if (pilhaCheia(&p))
+    		{
+        		printf("Pilha cheia!\n");
+    		}	
+    		else
+    		{
+        		Peca x = remover(&f);
+        		push(&p, x);
+        		inserir(&f, gerarPeca());
+	    	}
+			mostrarFila(&f);
+	   		mostrarPilha(&p);
+	   		break;
+		}
+		case 3:
+		{
+			if(pilhaVazia(&p)){
+				printf("Nao ha pecas reservadas!\n");
+			}
+			else{
+	    		Peca x = pop(&p);
+	    		printf("Usou peca reservada: %c %d\n", x.nome, x.id);
+	    	}
+	
+	    	mostrarFila(&f);
+	    	mostrarPilha(&p);
+	    	break;
+		}		
 		case 0:
 			printf("Saindo do programa...");
 			break;
