@@ -7,17 +7,18 @@ typedef struct{      //struct das Peças com nome e id
 	int id;
 } Peca;
 
-#define MAX 5           //definindo o max como 5 
+#define MAX_FILA 5           //definindo o max como 5 
+#define MAX_PILHA 3         //definindo o max pilha como 3
 
 typedef struct{             //struct da fila
-	Peca itens[MAX];
+	Peca itens[MAX_FILA];
 	int inicio;
 	int fim;
 	int total;
 } Fila;
 
 typedef struct{
-	Peca itens[MAX];
+	Peca itens[MAX_PILHA];
 	int topo;
 } Pilha;
 
@@ -27,7 +28,7 @@ void inicializarFila(Fila *f){    //função para inicializar a fila zerada
 	f -> total = 0;
 }
 int filaCheia(Fila *f){      //faz a verificação apra ver se a fila esta com todos os indices ocupados
-	return f -> total == MAX;
+	return f -> total == MAX_FILA;
 }
 int filaVazia(Fila *f){       //verifica se a lista esta vazia 
 	return f-> total == 0;
@@ -42,7 +43,7 @@ int pilhaVazia(Pilha *p){        //verifica se a pilha esta vazia
 }
 
 int pilhaCheia(Pilha *p){       //verifica se a pilha esta cheia
-    return p->topo == MAX - 1;
+    return p->topo == MAX_PILHA - 1;
 }
 
 void push(Pilha *p, Peca item){
@@ -60,7 +61,7 @@ void inserir(Fila *f, Peca p){       //função para inserir ou ENQUEUE
 		return;
 	}
 	f -> itens[f->fim] = p;
-	f -> fim = (f -> fim+1) % MAX;
+	f -> fim = (f -> fim+1) % MAX_FILA;
 	f -> total++;
 }
 int proximoId = 0;       //inicializando a varivel referente ao id com o valor 0
@@ -72,12 +73,13 @@ Peca gerarPeca(){
 	return p;                    //retornando para variavel p o tipo gerado (letras I ou O ou T ou L)
 	
 }
+
 void mostrarFila(Fila *f){
 	printf("\nFila de Pecas:\n");
 	int i = f->inicio;
 	for (int count = 0; count < f->total; count++){
 		printf("[%c %d] ", f->itens[i].nome, f->itens[i].id);
-		i = (i+1) % MAX;
+		i = (i+1) % MAX_FILA;
 	}
 	printf("\n");
 }
@@ -91,6 +93,14 @@ void mostrarPilha(Pilha *p){
 	printf("[%c %d]\n", p->itens[i].nome, p->itens[i].id);
 	}
 	printf("\n");
+}
+
+void mostrarEstado(Fila *f, Pilha *p){
+	printf("\n======= Estado Atual =======\n");
+	mostrarFila(f);
+	printf("\n");
+	mostrarPilha(p);
+	printf("\n============================\n");	
 }
 
 Peca pop(Pilha *p){
@@ -116,8 +126,7 @@ Peca remover(Fila *f){               //função de remoção da peça no caso a 
         return removida;
     }
 	removida = f -> itens[f->inicio];
-	printf("Peca escolhida: %c %d\n", removida.nome, removida.id);
-	f->inicio = (f->inicio + 1) % MAX;
+	f->inicio = (f->inicio + 1) % MAX_FILA;
 	f->total--;
 	return removida;
 }
@@ -128,18 +137,20 @@ int main(){
 	inicializarFila(&f);      //inicializa a fila
 	inicializarPilha(&p);    //inicializa a pilha
 	srand(time(NULL));      // para não sair sempre com a mesma sequencia 
-	for (int i = 0 ; i < MAX ; i++){     //esse laço de repetição vai ate MAX ou seja 5 gerando 5 peças
+	for (int i = 0 ; i < MAX_FILA ; i++){     //esse laço de repetição vai ate MAX ou seja 5 gerando 5 peças
 		inserir(&f, gerarPeca());     //cria uma peça aleatoria e insere na fila 
 	}
 
 	printf("Inicio do jogo, voce tem as seguintes pecas: \n");
-	mostrarFila(&f);
+	mostrarEstado(&f, &p);
 	int opcao;
 	do{
 		printf("\n========= Menu =========\n");
-		printf("1- Jogar peca\n");
-		printf("2- Reservar peca\n");
-		printf("3- Usar peca reservada\n");
+		printf("1- Jogar peca da frente da fila\n");
+		printf("2- Enviar peca da fila para a pilha (reserva)\n");
+		printf("3- Usar peca da reserva (pilha)\n");
+		printf("4- Trocar peca da frente da fila com o topo da pilha\n");
+		printf("5- Trocar os 3 primeiros da fila com as 3 peças da pilha\n");
 		printf("0- Sair\n");
 		printf("========================\n");
 		printf("Digite a opcao desejada: ");
@@ -148,8 +159,7 @@ int main(){
 		case 1: 
 			remover(&f);
 			inserir(&f, gerarPeca());
-			mostrarFila(&f);
-			mostrarPilha(&p);
+			mostrarEstado(&f, &p);
 			break;
 		case 2:
 		{
@@ -163,8 +173,7 @@ int main(){
         		push(&p, x);
         		inserir(&f, gerarPeca());
 	    	}
-			mostrarFila(&f);
-	   		mostrarPilha(&p);
+			mostrarEstado(&f, &p);
 	   		break;
 		}
 		case 3:
@@ -176,11 +185,54 @@ int main(){
 	    		Peca x = pop(&p);
 	    		printf("Usou peca reservada: %c %d\n", x.nome, x.id);
 	    	}
-	
-	    	mostrarFila(&f);
-	    	mostrarPilha(&p);
+	    	mostrarEstado(&f, &p);
 	    	break;
-		}		
+		}	
+		case 4:
+		{
+			if (filaVazia(&f) || pilhaVazia(&p)){
+				printf("Nao e possivel realizar a troca!\n");
+			}
+			else{
+				Peca temp;
+				temp = f.itens[f.inicio];
+				f.itens[f.inicio] = p.itens[p.topo];
+				p.itens[p.topo] = temp;
+				printf("Troca realizada com sucesso!\n"); 
+			}
+			mostrarEstado(&f, &p);
+			break;
+		}
+		case 5: {
+			Peca filaTemp[3];
+			Peca pilhaTemp[3];
+			int pos = f.inicio;                  //variavel auxiliar de posição (ajuda na questão da fila circular nem sempre começar no 0)
+			if (f.total < 3 || p.topo < 2) {
+				printf("Nao e possivel realizar a troca. Fila ou pilha possuem menos de 3 elementos.\n");
+			}
+			else{
+				for (int i = 0; i < 3; i++)
+				{
+					filaTemp[i] = f.itens[pos];      //copia o elemento atual da fila
+					pos = (pos + 1) % MAX_FILA;      //avança na fila de forma circular
+				}
+				pilhaTemp[0] = p.itens[p.topo];                //armazena na pilhaTemp (variavel temperoria) o topo da pilha
+				pilhaTemp[1] = p.itens[p.topo -1];             //p.topo-1 pois é LIFO (last in first out)
+				pilhaTemp[2] = p.itens[p.topo -2];
+				pos = f.inicio;
+				for (int i = 0; i < 3; i++)
+				{
+					f.itens[pos] = pilhaTemp[i];
+					pos =(pos + 1) % MAX_FILA;
+				}
+				p.itens[p.topo] = filaTemp[2];
+				p.itens[p.topo -1] = filaTemp[1];
+				p.itens[p.topo -2] = filaTemp[0];
+				printf("Troca multipla realizada com sucesso!\n");
+				mostrarEstado(&f, &p);
+			}
+			break;
+		}	
 		case 0:
 			printf("Saindo do programa...");
 			break;
